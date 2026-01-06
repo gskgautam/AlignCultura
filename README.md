@@ -131,60 +131,51 @@ $$
 
 ## Baselines
 
-To contextualize the results on **CulturaX**, we compare three categories of baselines.
+To contextualize results on **CulturaX**, we evaluate three baseline categories.
 
 ### 1️⃣ General-Purpose Aligned Models
-We include **joint-axis HHH alignment** frameworks that optimize all three axes simultaneously, excluding single-axis methods such as RAHF and Aligner.  
-Representative works:
+We include **joint-axis HHH alignment** frameworks only, excluding single-axis methods (e.g., RAHF, Aligner).
 
-- [MARL-Focal](https://arxiv.org/abs/2502.04492) — Multi-agent reinforcement for joint alignment  
-- [TrinityX](https://arxiv.org/abs/2509.08486) — Multi-stage alignment with adaptive calibration  
-- [H³Fusion](https://arxiv.org/abs/2411.17792) — Multi-objective fusion of helpfulness, harmlessness, and honesty
+- [MARL-Focal](https://arxiv.org/abs/2502.04492) — Multi-agent joint alignment  
+- [TrinityX](https://arxiv.org/abs/2509.08486) — Multi-stage adaptive alignment  
+- [H³Fusion](https://arxiv.org/abs/2411.17792) — Multi-objective HHH fusion
 
 ---
 
 ### 2️⃣ Culturally Fine-Tuned Models
-While no open-weight LLMs are fine-tuned explicitly for cultural alignment, we adapt existing SOTA alignment frameworks (MARL-Focal, TrinityX, H³Fusion) via **LoRA** for efficiency.
+We evaluate models explicitly adapted to cultural norms:
 
-**Training setup:**
-- Learning rate: `2e-5`  
-- Global batch size: `128`  
-- Max sequence length: `1024`  
-- Epochs: `3–5` (with early stopping on 5% validation set)  
-- Random seed: `42`
+- **CultureLLM** — Instruction-tuned with culturally annotated data  
+- **CulturePark** — Culture-aware alignment via structured norms  
 
-This configuration provides a scalable baseline for **culturally adaptive alignment**, testing if HHH improvements transfer to cultural reasoning.
+These represent state-of-the-art baselines for **culturally grounded HHH alignment**.
 
 ---
 
 ### 3️⃣ Open-Weight LLMs
-We also evaluate strong open-weight models without cultural tuning:
+We benchmark strong open-weight models without cultural tuning:
 
-- **[Gemma-7B](https://huggingface.co/google/gemma-7b)**  
-- **[DeepSeek-7B](https://huggingface.co/deepseek-ai/deepseek-llm-7b-base)**  
-
-These serve as representative mid-scale open models for comparison.
+- **[Qwen3-8B](https://huggingface.co/Qwen/Qwen3-8B)**  
+- **[DeepSeek-R1-Distill-Qwen-7B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B)**  
 
 ---
 
 ## Experimental Results and Analysis
 
-All experiments were performed using **PyTorch 2.3** on **4× NVIDIA A100 (80 GB)** GPUs with mixed precision and a fixed random seed `42`.
+All experiments use **PyTorch 2.3** on **4× NVIDIA A100 (80GB)** GPUs with mixed precision and random seed `42`.
 
 ### Stage I – Generation
 - Temperature: `0.7`  
 - Top-p: `0.9`  
 - Max length: `512`  
-- Each query generated up to `K = 3` candidates  
-- Maximum of 2 feedback iterations to balance quality and compute efficiency
+- Up to `K = 3` candidates per query  
+- Max 2 feedback iterations
 
 ### Stage II – Evaluation
-- Averaged over **3 independent runs**  
-- Parameters: temperature `0.7`, top-p `0.9`, max length `512`, repetition penalty `1.1`  
-- Ensures consistent and low-variance evaluation across cultural domains
+- Results averaged over **3 runs**  
+- Decoding: temperature `0.7`, top-p `0.9`, max length `512`, repetition penalty `1.1`
 
 ### Dataset – CulturaX
-- Total samples: `M = 1500`  
-- Split: 80 % train, 10 % validation, 10 % test  
+- Total samples: `1500`  
+- Split: `80% / 10% / 10%` (train / val / test)
 
----
