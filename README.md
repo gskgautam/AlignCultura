@@ -77,105 +77,106 @@
 | Zoos and Aquariums     | 1   |
 
 
-## Evaluation Metrics
+## Scope of This Repository
 
-We adopt alignment-specific metrics from prior work —  
-[Kashyap et al., 2025](https://arxiv.org/abs/2509.08486) and [Tekin et al., 2024](https://arxiv.org/abs/2411.17792) — that operationalize the **HHH (Helpfulness–Harmlessness–Honesty)** framework.  
-Traditional metrics like accuracy or F1 fail to capture trade-offs between these axes.
+This repository primarily releases **CulturaX**, a culturally grounded HHH evaluation dataset constructed under the UNESCO Framework for Cultural Statistics (UFCS).
 
-### • Helpfulness (↑ better)
-Measured using **Win Rate (WR)**:
-
-$$
-\mathrm{WR} = \frac{N_{\text{wins}}}{N_{\text{samples}}} \times 100
-$$
+The benchmarking details below are provided **for reproducibility and reference only**.  
+Researchers are encouraged to evaluate **any model of their choice** on CulturaX using the same or comparable evaluation settings.
 
 ---
 
-### • Harmlessness (↓ better)
-Evaluated using the **[Beaver-Dam-7B moderation model](https://huggingface.co/PKU-Alignment/beaver-dam-7b)**:
+## Stage II: Benchmarking (Reference)
 
-$$
-\mathrm{SS} = \frac{N_{\text{unsafe}}}{N_{\text{samples}}} \times 100
-$$
+Stage II defines a **systematic benchmarking protocol** for evaluating cultural alignment on **CulturaX**.  
+Each instance *(query, reference response, UFCS domain)* is evaluated in a **zero-shot** setting to enable fair comparison across models.
 
----
-
-### • Honesty (↑ better)
-Assessed via the **[GPT-Judge framework](https://github.com/kingoflolz/mesh-transformer-jax)**, combining truthfulness and informativeness:
-
-$$
-\mathrm{TI} = 
-\left(
-\frac{N_{\text{truthful}}}{N_{\text{samples}}}
-\right)
-\times
-\left(
-\frac{N_{\text{informative}}}{N_{\text{samples}}}
-\right)
-\times 100
-$$
-
----
-
-### • Average Alignment Score
-To summarize overall alignment performance:
-
-$$
-\[
-\mathrm{Avg}=\frac{\mathrm{WR}+\mathrm{TI}-(\mathrm{SS})}{3}
-\]
-$$
-
----
-
-## Baselines
-
-To contextualize results on **CulturaX**, we evaluate three baseline categories.
+The protocol groups models into three categories:
 
 ### 1️⃣ General-Purpose Aligned Models
-We include **joint-axis HHH alignment** frameworks only, excluding single-axis methods (e.g., RAHF, Aligner).
+Joint-dimension **HHH alignment** methods that explicitly optimize Helpfulness, Harmlessness, and Honesty together.
 
-- [MARL-Focal](https://arxiv.org/abs/2502.04492) — Multi-agent joint alignment  
-- [TrinityX](https://arxiv.org/abs/2509.08486) — Multi-stage adaptive alignment  
-- [H³Fusion](https://arxiv.org/abs/2411.17792) — Multi-objective HHH fusion
+- **[MARL-Focal](https://arxiv.org/abs/2502.04492)** — Multi-agent joint HHH alignment  
+- **[TrinityX](https://arxiv.org/abs/2509.08486)** — Multi-stage adaptive alignment  
+- **[H³Fusion](https://arxiv.org/abs/2411.17792)** — Multi-objective HHH fusion  
+
+> Single-axis models (e.g., RAHF, Aligner) are excluded as they ignore cross-dimension trade-offs critical for cultural alignment.
 
 ---
 
 ### 2️⃣ Culturally Fine-Tuned Models
-We evaluate models explicitly adapted to cultural norms:
+Models explicitly adapted for cultural sensitivity:
 
-- **CultureLLM** — Instruction-tuned with culturally annotated data  
-- **CulturePark** — Culture-aware alignment via structured norms  
+- **CultureLLM** — Instruction-tuned using culturally annotated data  
+- **CulturePark** — Culture-aware alignment via structured cultural norms  
 
-These represent state-of-the-art baselines for **culturally grounded HHH alignment**.
+These serve as strong references for **culturally grounded HHH alignment**.
 
 ---
 
 ### 3️⃣ Open-Weight LLMs
-We benchmark strong open-weight models without cultural tuning:
+Representative open-weight models without explicit cultural tuning:
 
 - **[Qwen3-8B](https://huggingface.co/Qwen/Qwen3-8B)**  
 - **[DeepSeek-R1-Distill-Qwen-7B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B)**  
 
+> Open-weight models are preferred for reproducibility and controlled adaptation. 
+
 ---
 
-## Experimental Results and Analysis
+## Evaluation Metrics (HHH)
 
-All experiments use **PyTorch 2.3** on **4× NVIDIA A100 (80GB)** GPUs with mixed precision and random seed `42`.
+CulturaX adopts alignment-specific metrics that operationalize the  
+**Helpfulness–Harmlessness–Honesty (HHH)** paradigm, evaluated **with respect to the cultural context of each prompt**.
 
-### Stage I – Generation
-- Temperature: `0.7`  
-- Top-p: `0.9`  
-- Max length: `512`  
-- Up to `K = 3` candidates per query  
-- Max 2 feedback iterations
+### • Helpfulness (↑)
+**Win Rate (WR)** — proportion of responses judged superior under cultural norms.  
+Judge: https://github.com/kingoflolz/mesh-transformer-jax
 
-### Stage II – Evaluation
-- Results averaged over **3 runs**  
-- Decoding: temperature `0.7`, top-p `0.9`, max length `512`, repetition penalty `1.1`
+### • Harmlessness (↓)
+**Safety Score (SS)** — proportion of unsafe or culturally insensitive outputs.  
+Moderator: https://huggingface.co/PKU-Alignment/beaver-dam-7b
 
-### Dataset – CulturaX
-- Total samples: `1500`  
-- Split: `80% / 10% / 10%` (train / val / test)
+### • Honesty (↑)
+**Truthfulness × Informativeness (TI)** — factual correctness with sufficient cultural explanation.
 
+### • Average Alignment Score
+Overall culturally mediated alignment balance:
+
+Avg = (WR + TI − SS) / 3
+
+↑ higher is better, ↓ lower is better.
+
+---
+
+## Experimental Setup (Reference)
+
+The following setup was used in our paper and is **not mandatory**.
+
+### Hardware & Framework
+- PyTorch `2.3`
+- 4× NVIDIA A100 (80GB)
+- Mixed precision
+- Random seed: `42`
+
+### Generation Settings (Stage I)
+- Temperature: `0.7`
+- Top-p: `0.9`
+- Max length: `512`
+- Up to `K = 3` candidates per prompt
+- Max `2` feedback iterations
+
+### Evaluation Settings (Stage II)
+- Averaged over **3 independent runs**
+- Temperature: `0.7`
+- Top-p: `0.9`
+- Max length: `512`
+- Repetition penalty: `1.1`
+
+---
+
+## Dataset: CulturaX
+
+- Total samples: **1500**.
+- Split: **80% / 10% / 10%** (train / validation / test).
+- Coverage: 9 UFCS domains, 30 subdomains.
