@@ -77,106 +77,78 @@
 | Zoos and Aquariums     | 1   |
 
 
-## Scope of This Repository
+### Data Construction Overview
 
-This repository primarily releases **CulturaX**, a culturally grounded HHH evaluation dataset constructed under the UNESCO Framework for Cultural Statistics (UFCS).
+| Step | Module | Model / Method | Purpose |
+|-----:|--------|----------------|---------|
+| 1 | Query Classification | Mistral-7B-Instruct | Multi-label UFCS domain assignment. |
+| 2 | Domain Expansion | Llama-3.1-8B-Instruct | Balance underrepresented cultural domains. |
+| 3 | Deduplication | SimHash (τ = 10) | Prevent near-duplicates and data leakage. |
+| 4 | Response Generation | GPT-4.1 | Generate culturally grounded candidate responses. |
+| 5 | HHH Filtering | Llama-3.1-8B-Instruct | Enforce Helpful, Harmless, and Honest (HHH) criteria. |
 
-The benchmarking details below are provided **for reproducibility and reference only**.  
-Researchers are encouraged to evaluate **any model of their choice** on CulturaX using the same or comparable evaluation settings.
+**Note on model reuse.**  
+Although **Llama-3.1-8B-Instruct** is used in two stages, its roles are strictly separated. In **Query Construction (Stage I)**, it operates as a *controlled prompt generator* for expanding underrepresented UFCS domains. In **Response Generation (Stage I)**, it acts solely as an *HHH-Quality Model* that critiques and filters responses rather than generating final content.
 
----
+Furthermore, response generation is performed by an independent model (**GPT-4.1**), ensuring that no model is responsible for both producing and scoring the same output. This separation mitigates circular bias and preserves the integrity of HHH evaluation.
 
-## Stage II: Benchmarking (Reference)
 
-Stage II defines a **systematic benchmarking protocol** for evaluating cultural alignment on **CulturaX**.  
-Each instance *(query, reference response, UFCS domain)* is evaluated in a **zero-shot** setting to enable fair comparison across models.
+### Dataset Statistics
 
-The protocol groups models into three categories:
+| Attribute | Value |
+|----------|-------|
+| Total instances | 1,500 |
+| Language | English |
+| High-level cultural domains | 9 (UNESCO UFCS) |
+| Cultural subdomains | 30 |
+| Cultural forms | Tangible & Intangible |
+| Source prompts | Cultural Kaleidoscope |
+| Deduplication method | SimHash |
+| Cross-split leakage | 0.3% |
+| Train / Val / Test split | 80% / 10% / 10% |
 
-### 1️⃣ General-Purpose Aligned Models
-Joint-dimension **HHH alignment** methods that explicitly optimize Helpfulness, Harmlessness, and Honesty together.
+### Models Used
 
-- **[MARL-Focal](https://arxiv.org/abs/2502.04492)** — Multi-agent joint HHH alignment  
-- **[TrinityX](https://arxiv.org/abs/2509.08486)** — Multi-stage adaptive alignment  
-- **[H³Fusion](https://arxiv.org/abs/2411.17792)** — Multi-objective HHH fusion  
+| Category | Model | Role |
+|---------|-------|------|
+| Classification | Mistral-7B-Instruct | UFCS multi-label domain classification. |
+| Expansion | Llama-3.1-8B-Instruct | Query expansion for underrepresented cultural domains. |
+| Generation | GPT-4.1 | Culturally grounded response generation. |
+| HHH Evaluation | Llama-3.1-8B-Instruct | Automated Helpful–Harmless–Honest (HHH) quality assessment. |
+| Benchmarking (General-Purpose) | MARL-Focal | Joint-dimension HHH-aligned baseline. |
+| Benchmarking (General-Purpose) | TrinityX | Joint-dimension HHH-aligned baseline. |
+| Benchmarking (General-Purpose) | H³Fusion | Joint-dimension HHH-aligned baseline. |
+| Benchmarking (Cultural) | CultureLLM | Culturally fine-tuned alignment baseline. |
+| Benchmarking (Cultural) | CulturePark | Culturally fine-tuned alignment baseline. |
+| Benchmarking (Open-Weight) | Qwen3-8B | Open-weight evaluation baseline. |
+| Benchmarking (Open-Weight) | DeepSeek-R1-Distill-Qwen-7B | Open-weight evaluation baseline. |
 
-> Single-axis models (e.g., RAHF, Aligner) are excluded as they ignore cross-dimension trade-offs critical for cultural alignment.
+### Model Selection Rationale
 
----
+AlignCultura evaluates models across three categories to ensure fair and meaningful comparison:
 
-### 2️⃣ Culturally Fine-Tuned Models
-Models explicitly adapted for cultural sensitivity:
+- **General-Purpose Aligned Models**  
+  Only *joint-dimension HHH alignment* methods are included (MARL-Focal, TrinityX, H³Fusion).  
+  Single-dimension models (e.g., helpfulness-only or safety-only) are excluded, as they optimize isolated objectives and fail to capture the cross-dimension trade-offs required for cultural alignment.
 
-- **CultureLLM** — Instruction-tuned using culturally annotated data  
-- **CulturePark** — Culture-aware alignment via structured cultural norms  
+- **Culturally Fine-Tuned Models**  
+  CultureLLM and CulturePark are evaluated as representative approaches that explicitly adapt LLMs using culturally annotated data or structured cultural norms, enabling improved sensitivity to cultural context.
 
-These serve as strong references for **culturally grounded HHH alignment**.
+- **Open-Weight LLMs**  
+  Qwen3-8B and DeepSeek-R1-Distill-Qwen-7B are included as strong mid-scale open-weight models without explicit cultural alignment. Only open-weight models are evaluated in this category to ensure reproducibility and controlled adaptation, as closed-source models do not permit parameter-level intervention.
 
----
+Closed-source models (e.g., Claude-3 Opus, Gemini-2.5 Pro) are analyzed separately for reference. While highly capable, they are excluded from the main benchmarking comparisons due to limited reproducibility and lack of controllable alignment mechanisms. Notably, their strongest performance also emerges under joint HHH optimization, supporting the central hypothesis that culturally appropriate behavior arises from coordinated multi-objective alignment rather than isolated objective tuning.
 
-### 3️⃣ Open-Weight LLMs
-Representative open-weight models without explicit cultural tuning:
 
-- **[Qwen3-8B](https://huggingface.co/Qwen/Qwen3-8B)**  
-- **[DeepSeek-R1-Distill-Qwen-7B](https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B)**  
+### Key Hyperparameters
 
-> Open-weight models are preferred for reproducibility and controlled adaptation. 
-
----
-
-## Evaluation Metrics (HHH)
-
-CulturaX adopts alignment-specific metrics that operationalize the  
-**Helpfulness–Harmlessness–Honesty (HHH)** paradigm, evaluated **with respect to the cultural context of each prompt**.
-
-### • Helpfulness (↑)
-**Win Rate (WR)** — proportion of responses judged superior under cultural norms.  
-Judge: https://github.com/kingoflolz/mesh-transformer-jax
-
-### • Harmlessness (↓)
-**Safety Score (SS)** — proportion of unsafe or culturally insensitive outputs.  
-Moderator: https://huggingface.co/PKU-Alignment/beaver-dam-7b
-
-### • Honesty (↑)
-**Truthfulness × Informativeness (TI)** — factual correctness with sufficient cultural explanation.
-
-### • Average Alignment Score
-Overall culturally mediated alignment balance:
-
-Avg = (WR + TI − SS) / 3
-
-↑ higher is better, ↓ lower is better.
-
----
-
-## Experimental Setup (Reference)
-
-The following setup was used in our paper and is **not mandatory**.
-
-### Hardware & Framework
-- PyTorch `2.3`
-- 4× NVIDIA A100 (80GB)
-- Mixed precision
-- Random seed: `42`
-
-### Generation Settings (Stage I)
-- Temperature: `0.7`
-- Top-p: `0.9`
-- Max length: `512`
-- Up to `K = 3` candidates per prompt
-- Max `2` feedback iterations
-
-### Evaluation Settings (Stage II)
-- Averaged over **3 independent runs**
-- Temperature: `0.7`
-- Top-p: `0.9`
-- Max length: `512`
-- Repetition penalty: `1.1`
-
----
-
-## Dataset: CulturaX
-
-- Total samples: **1500**.
-- Split: **80% / 10% / 10%** (train / validation / test).
-- Coverage: 9 UFCS domains, 30 subdomains.
+| Component | Parameter | Value |
+|----------|----------|-------|
+| Classification | Probability threshold (δ) | 0.5 |
+| Deduplication | SimHash Hamming threshold (τ) | 10 |
+| Generation | Temperature | 0.7 |
+| Generation | Top-p | 0.9 |
+| Generation | Max tokens | 512 |
+| Generation | Candidates per prompt (K) | 3 |
+| Feedback resampling | Max iterations | 2 |
+| Training | Random seed | 42 |
