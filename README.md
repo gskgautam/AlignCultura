@@ -1,5 +1,7 @@
 # AlignCultura
 
+(https://huggingface.co/datasets/impressive-east579/CulturaX)
+
 ## CulturaX Class Index Mapping
 
 | Class ID | Class Name                         |
@@ -77,22 +79,6 @@
 | Zoos and Aquariums     | 1   |
 
 
-### Data Construction Overview
-
-| Step | Module | Model / Method | Purpose |
-|-----:|--------|----------------|---------|
-| 1 | Query Classification | Mistral-7B-Instruct | Multi-label UFCS domain assignment. |
-| 2 | Domain Expansion | Llama-3.1-8B-Instruct | Balance underrepresented cultural domains. |
-| 3 | Deduplication | SimHash (τ = 10) | Prevent near-duplicates and data leakage. |
-| 4 | Response Generation | GPT-4.1 | Generate culturally grounded candidate responses. |
-| 5 | HHH Filtering | Llama-3.1-8B-Instruct | Enforce Helpful, Harmless, and Honest (HHH) criteria. |
-
-**Note on model reuse.**  
-Although **Llama-3.1-8B-Instruct** is used in two stages, its roles are strictly separated. In **Query Construction (Stage I)**, it operates as a *controlled prompt generator* for expanding underrepresented UFCS domains. In **Response Generation (Stage I)**, it acts solely as an *HHH-Quality Model* that critiques and filters responses rather than generating final content.
-
-Furthermore, response generation is performed by an independent model (**GPT-4.1**), ensuring that no model is responsible for both producing and scoring the same output. This separation mitigates circular bias and preserves the integrity of HHH evaluation.
-
-
 ### Dataset Statistics
 
 | Attribute | Value |
@@ -106,49 +92,3 @@ Furthermore, response generation is performed by an independent model (**GPT-4.1
 | Deduplication method | SimHash |
 | Cross-split leakage | 0.3% |
 | Train / Val / Test split | 80% / 10% / 10% |
-
-### Models Used
-
-| Category | Model | Role |
-|---------|-------|------|
-| Classification | Mistral-7B-Instruct | UFCS multi-label domain classification. |
-| Expansion | Llama-3.1-8B-Instruct | Query expansion for underrepresented cultural domains. |
-| Generation | GPT-4.1 | Culturally grounded response generation. |
-| HHH Evaluation | Llama-3.1-8B-Instruct | Automated Helpful–Harmless–Honest (HHH) quality assessment. |
-| Benchmarking (General-Purpose) | MARL-Focal | Joint-dimension HHH-aligned baseline. |
-| Benchmarking (General-Purpose) | TrinityX | Joint-dimension HHH-aligned baseline. |
-| Benchmarking (General-Purpose) | H³Fusion | Joint-dimension HHH-aligned baseline. |
-| Benchmarking (Cultural) | CultureLLM | Culturally fine-tuned alignment baseline. |
-| Benchmarking (Cultural) | CulturePark | Culturally fine-tuned alignment baseline. |
-| Benchmarking (Open-Weight) | Qwen3-8B | Open-weight evaluation baseline. |
-| Benchmarking (Open-Weight) | DeepSeek-R1-Distill-Qwen-7B | Open-weight evaluation baseline. |
-
-### Model Selection Rationale
-
-AlignCultura evaluates models across three categories to ensure fair and meaningful comparison:
-
-- **General-Purpose Aligned Models**  
-  Only *joint-dimension HHH alignment* methods are included (MARL-Focal, TrinityX, H³Fusion).  
-  Single-dimension models (e.g., helpfulness-only or safety-only) are excluded, as they optimize isolated objectives and fail to capture the cross-dimension trade-offs required for cultural alignment.
-
-- **Culturally Fine-Tuned Models**  
-  CultureLLM and CulturePark are evaluated as representative approaches that explicitly adapt LLMs using culturally annotated data or structured cultural norms, enabling improved sensitivity to cultural context.
-
-- **Open-Weight LLMs**  
-  Qwen3-8B and DeepSeek-R1-Distill-Qwen-7B are included as strong mid-scale open-weight models without explicit cultural alignment. Only open-weight models are evaluated in this category to ensure reproducibility and controlled adaptation, as closed-source models do not permit parameter-level intervention.
-
-Closed-source models (e.g., Claude-3 Opus, Gemini-2.5 Pro) are analyzed separately for reference. While highly capable, they are excluded from the main benchmarking comparisons due to limited reproducibility and lack of controllable alignment mechanisms. Notably, their strongest performance also emerges under joint HHH optimization, supporting the central hypothesis that culturally appropriate behavior arises from coordinated multi-objective alignment rather than isolated objective tuning.
-
-
-### Key Hyperparameters
-
-| Component | Parameter | Value |
-|----------|----------|-------|
-| Classification | Probability threshold (δ) | 0.5 |
-| Deduplication | SimHash Hamming threshold (τ) | 10 |
-| Generation | Temperature | 0.7 |
-| Generation | Top-p | 0.9 |
-| Generation | Max tokens | 512 |
-| Generation | Candidates per prompt (K) | 3 |
-| Feedback resampling | Max iterations | 2 |
-| Training | Random seed | 42 |
